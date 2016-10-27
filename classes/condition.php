@@ -109,19 +109,20 @@ class condition extends \core_availability\condition {
         $sectionnumber =$this->sectionnumber;
 		//get_sections returns an array of sections that each containt an array of cmids
         $sections = $mod_info->get_sections();
-        $section_cms =$sections[$sectionnumber];
-        
-        
-        foreach($section_cms as $cmid){
-        	$cm = $mod_info->get_cm($cmid);
-			if($cm->completion != COMPLETION_TRACKING_NONE){
-				$data = $completioninfo->get_data($cm);
-				if(!$data || $data->completionstate==0){
-					$allow =false;
-					break;
+
+		if(array_key_exists($sectionnumber,$sections)){
+			$section_cms =$sections[$sectionnumber];        
+			foreach($section_cms as $cmid){
+				$cm = $mod_info->get_cm($cmid);
+				if($cm->completion != COMPLETION_TRACKING_NONE){
+					$data = $completioninfo->get_data($cm);
+					if(!$data || $data->completionstate==0){
+						$allow =false;
+						break;
+					}
 				}
-			}
-        }
+			} 
+        } //end of if array_key_exists
    
         if ($not) {
             $allow = !$allow;
