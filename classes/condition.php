@@ -39,6 +39,7 @@ class condition extends \core_availability\condition {
 
     /** @var int the sectionnumber that this depends on */
     protected $sectionnumber;
+    const ALL_SECTIONS=-1;
     
     /**
      * Constructor.
@@ -91,43 +92,102 @@ class condition extends \core_availability\condition {
      * @param int $userid User ID to check availability for
      * @return bool True if available
      */
-    public function is_available($not, \core_availability\info $info, $grabthelot, $userid) {
+    public function is_available($not, \core_availability\info $info, $grabthelot=false, $userid=0) {
         global $DB;
-        
-        $course = $info->get_course();
-        
-        
-        //It would be easier to use a big fat SQL here but
-        //that would be bad from a scalability point of view
-        
-        $completioninfo = new \completion_info($course);
-        //allow until we found an incomplete activity in the section
-        $allow =true;
-        
-        //get the course module and section info we needd
-        $mod_info = $info->get_modinfo();
-        $sectionnumber =$this->sectionnumber;
-		//get_sections returns an array of sections that each containt an array of cmids
-        $sections = $mod_info->get_sections();
 
-		if(array_key_exists($sectionnumber,$sections)){
-			$section_cms =$sections[$sectionnumber];        
-			foreach($section_cms as $cmid){
-				$cm = $mod_info->get_cm($cmid);
-				if($cm->completion != COMPLETION_TRACKING_NONE){
-					$data = $completioninfo->get_data($cm);
-					if(!$data || $data->completionstate==0){
-						$allow =false;
-						break;
-					}
-				}
-			} 
-        } //end of if array_key_exists
-   
+        $course = $info->get_course();
+        $modinfo = $info->get_modinfo();
+
+        $sec_compl_info = self::get_section_completion_info($this->sectionnumber,$course,$modinfo,$grabthelot,$userid);
+        $allow = $sec_compl_info->sectioncompletedinfo>0;
+
         if ($not) {
             $allow = !$allow;
         }
         return $allow;
+    }
+
+    /**
+     * Determines whether a particular item is currently available
+     * according to this availability condition.
+     *
+     * @param int $sectionumber either ALL_SECTIONS or a section number
+     * @param info $info
+     * @param bool $grabthelot Performance hint: if true, caches information
+     *   required for all course-modules, to make the front page and similar
+     *   pages work more quickly (works only for current user)
+     * @param int $userid User ID to check availability for
+     * @return bool True if available
+     */
+    public static function get_section_completion_info($sectionnumber,$course,$modinfo, $grabthelot=false, $userid=0) {
+
+        //It would be easier to use a big fat SQL here but
+        //that would be bad from a scalability point of view
+
+
+        $completioninfo = new \completion_info($course);
+        $activitycount = 0; //total activities in total sections searched
+        $activitycompletedcount=0; //total completions in total sections searched
+        $sectioncount=0; //total sections
+        $sectioncompletedcount=0; // total completed sections
+
+
+        //get the course module and section info we needd
+        $sectionnumber = $sectionnumber;
+        //get_sections returns an array of sections that each containt an array of cmids
+        $sections = $modinfo->get_sections();
+
+        //we try to loop through all or one section, depending on the section number
+        if ($sectionnumber==self::ALL_SECTIONS ){
+            $searchstart=1;
+            $searchend=count($sections);
+        }else{
+            $searchstart=$sectionnumber;
+            $searchend=$sectionnumber;
+        }
+
+        //loop through all
+        for($thesection=$searchstart;$thesection<$searchend+1;$thesection++) {
+            if (array_key_exists($thesection, $sections)) {
+
+                //bump the section count
+                $sectioncount++;
+                //init count of completable activities in section
+                $section_activitycount = 0;
+                //init count of completed activities in section
+                $section_activitycompletedcount = 0;
+
+                //fetch all activity cmids in section
+                $section_cms = $sections[$thesection];
+                //loop through all cmids and check their completion status
+                foreach ($section_cms as $cmid) {
+                    $cm = $modinfo->get_cm($cmid);
+                    if ($cm->completion != COMPLETION_TRACKING_NONE) {
+                        $section_activitycount++;
+
+                        $data = $completioninfo->get_data($cm, $grabthelot, $userid);
+                        if ($data && $data->completionstate > 0) {
+                            $section_activitycompletedcount++;
+                        }
+                    }
+                }
+                //if the section is completable and complete, bump the completion count
+                if ($section_activitycompletedcount > 0 && $section_activitycompletedcount == $section_activitycount) {
+                    $sectioncompletedcount++;
+                }
+                //add section details to the total completeable and completed
+                $activitycount += $section_activitycount;
+                $activitycompletedcount += $section_activitycompletedcount;
+            } //end of if array_key_exists
+        }//end of for search sections
+
+        //prepare return object
+        $ret = new \stdClass();
+        $ret->activitycount = $activitycount; //total activities in total sections searched
+        $ret->activitycompletedcount=$activitycompletedcount; //total completions in total sections searched
+        $ret->sectioncount=$sectioncount; //total sections
+        $ret->sectioncompletedcount=$sectioncompletedcount; //total completed sections
+        return $ret;
     }
 
     /**
