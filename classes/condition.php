@@ -99,7 +99,7 @@ class condition extends \core_availability\condition {
         $modinfo = $info->get_modinfo();
 
         $sec_compl_info = self::get_section_completion_info($this->sectionnumber,$course,$modinfo,$grabthelot,$userid);
-        $allow = $sec_compl_info->sectioncompletedinfo>0;
+        $allow = $sec_compl_info->sectioncompletedcount > 0;
 
         if ($not) {
             $allow = !$allow;
