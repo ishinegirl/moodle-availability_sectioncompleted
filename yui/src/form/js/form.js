@@ -41,7 +41,9 @@ M.availability_sectioncompleted.form.getNode = function(json) {
     // Add event handlers (first time only).
     if (!M.availability_sectioncompleted.form.addedEvents) {
         M.availability_sectioncompleted.form.addedEvents = true;
-        var root = Y.one('#fitem_id_availabilityconditionsjson');
+       // var root = Y.one('#fitem_id_availabilityconditionsjson');
+       var root = Y.one('.availability-field');
+       
         root.delegate('change', function() {
             // Whichever dropdown changed, just update the form.
             M.core_availability.form.update();

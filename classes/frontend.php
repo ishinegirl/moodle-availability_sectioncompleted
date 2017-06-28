@@ -75,16 +75,17 @@ class frontend extends \core_availability\frontend {
 					}
 				}
 			}
-		//	echo 'dropping down';
-		//	echo (count($dropdowns));
-		//	print_r($dropdowns[19]);
-	//		print_r($dropdowns);
+			//echo 'dropping down';
+			//echo (count($dropdowns));
+			//	print_r($dropdowns[19]);
+			//print_r($dropdowns);
         return array($dropdowns);
     }
 
     protected function allow_add($course, \cm_info $cm = null,
             \section_info $section = null) {
         global $CFG;
+
 
         // Check if completion is enabled for the course.
         require_once($CFG->libdir . '/completionlib.php');

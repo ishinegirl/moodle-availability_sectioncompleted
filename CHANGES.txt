@@ -1,0 +1,2 @@
+Build 3.2 (version 2017062801)
+-fixed a YUI javascript line where the API to access the dom seemed to have changed breaking what worked in 3.1
