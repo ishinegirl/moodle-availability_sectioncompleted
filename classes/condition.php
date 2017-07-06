@@ -139,7 +139,7 @@ class condition extends \core_availability\condition {
 
         //we try to loop through all or one section, depending on the section number
         if ($sectionnumber==self::ALL_SECTIONS ){
-            $searchstart=1;
+            $searchstart=0;
             $searchend=count($sections);
         }else{
             $searchstart=$sectionnumber;
