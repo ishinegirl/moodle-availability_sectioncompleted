@@ -130,9 +130,11 @@ class condition extends \core_availability\condition {
         $activitycompletedcount=0; //total completions in total sections searched
         $sectioncount=0; //total sections
         $sectioncompletedcount=0; // total completed sections
+        $sectionnames=array();
+        $sectionscompletion=array();
 
 
-        //get the course module and section info we needd
+        //get the course module and section info we need
         $sectionnumber = $sectionnumber;
         //get_sections returns an array of sections that each containt an array of cmids
         $sections = $modinfo->get_sections();
@@ -147,6 +149,7 @@ class condition extends \core_availability\condition {
         }
 
         //loop through all
+        $sectioncount=0;
         for($thesection=$searchstart;$thesection<$searchend+1;$thesection++) {
             if (array_key_exists($thesection, $sections)) {
 
@@ -156,6 +159,10 @@ class condition extends \core_availability\condition {
                 $section_activitycount = 0;
                 //init count of completed activities in section
                 $section_activitycompletedcount = 0;
+
+                //figure out how to get this soon .... Justin 2017/07/20
+                $sectionnames[]="module " . $thesection;
+
 
                 //fetch all activity cmids in section
                 $section_cms = $sections[$thesection];
@@ -174,6 +181,9 @@ class condition extends \core_availability\condition {
                 //if the section is completable and complete, bump the completion count
                 if ($section_activitycompletedcount > 0 && $section_activitycompletedcount == $section_activitycount) {
                     $sectioncompletedcount++;
+                    $sectionscompletion[]=true;
+                }else{
+                    $sectionscompletion[]=false;
                 }
                 //add section details to the total completeable and completed
                 $activitycount += $section_activitycount;
@@ -187,6 +197,8 @@ class condition extends \core_availability\condition {
         $ret->activitycompletedcount=$activitycompletedcount; //total completions in total sections searched
         $ret->sectioncount=$sectioncount; //total sections
         $ret->sectioncompletedcount=$sectioncompletedcount; //total completed sections
+        $ret->sectionnames = $sectionnames;
+        $ret->sectionscompletion=$sectionscompletion;
         return $ret;
     }
 
